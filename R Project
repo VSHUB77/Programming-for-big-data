@@ -1,0 +1,154 @@
+#Objectives 
+
+#The objective of the following analysis is to understand employee retention and attrition from a human resources perspective. Human resources or as widely abbreviated HR is a field that deals with the most essential resource of an organization, the human being. ‘Human Capital’ or human resources management functions innately on the basis of employee interaction. The entry, journey and the exit of an employee are all being assisted by the HR team. 
+
+##In the recent times of dismay, where the planet is suffering from the Coronavirus pandemic, many multinational firms are facing a financial crisis. With an economic slowdown in vision, it is necessary to understand the post COVID-19 job market and analyze this data for maintaining finances and retaining employees. Employees essentially the most crucial assets of any organization. The progress of any organization depends on the combination of novelty, continued business relationships and improvement, employee satisfaction, and finally profit. 
+
+##This analysis will help you understand the effect of various factors on employee attrition.
+
+##Analysis results and presentation
+
+#Using ggplot, various distributions have been visualized for critical insights.
+#Attrition labels:
+#Yes - The employee left the company
+#No- The employee stayed in the company
+
+
+#Code for the Insurance dataset
+
+#install.packages("ggplot2")
+library(ggplot2)
+#install.packages("hrbrthemes")
+library(hrbrthemes)
+library(ggplot2)
+library(dplyr)
+
+#importing the data
+data = read.csv(file = 'insurance.csv', head=TRUE, sep=",")
+
+ggplot(data, aes(x=charges)) +
+  geom_histogram(fill="#69b3a2", color="#e9ecef")+ggtitle("rtjhfyjgu")
+
+ggplot(data, aes(x = age, y = charges)) +
+  geom_point(aes(color = factor(sex)),size=4,alpha=.5)+
+  theme_ipsum()+
+  labs(x = "AGE",
+       y = "Charges",
+       title = "Age vs Insurance Charges")
+
+ggplot(data, aes(x = age, y =  charges)) +
+  geom_point(aes(color = factor(region)),size=4,alpha=.4)+
+  theme_ipsum()+
+  labs(x = "AGE",
+       y = "Charges",
+       title = "Age vs Insurance Charges in different regions")
+
+ggplot(data, aes(x = age, y = charges)) +
+  geom_point(aes(color = factor(smoker)),size=4,alpha=.4)+
+  theme_ipsum()+
+  labs(x = "AGE",
+       y = "Charges",
+       title = "Insurance charge Vs Age filtered by smoker")
+
+#encoding the categorical data
+
+data$smoker=as.numeric(factor(data$smoker,
+                                  levels=c('no','yes'),
+                                  labels = c(1,2)))
+
+data$sex=as.numeric(factor(data$sex,
+                              levels=c('female','male'),
+                              labels = c(1,2)))
+
+data$region=as.numeric(factor(data$region,
+                           levels=c('southwest','southeast','northwest','northeast'),
+                           labels = c(1,2,3,4)))
+
+sapply(data,function(x) sum(is.na(x))) # checking if their is any N/A values in dataset
+
+sapply(data, class) # checking the datatype 
+
+data$age = as.numeric(data$age)  # converting it to numeric
+data$children = as.numeric(data$children) # converting it to numeric
+
+# applying regression model
+
+regression_model = lm(charges~., data = data)
+
+summary(regression_model) 
+
+code for Attrition predicition
+
+library(ggplot2)
+library(dplyr)
+#install.packages("ggthemes")
+library(ggthemes)
+#importing the data
+
+data = read.csv(file = 'WA_Fn-UseC_-HR-Employee-Attrition.csv', head=TRUE, sep=",")
+# checking if their are any null values
+sapply(data,function(x) sum(is.na(x))) 
+sapply(data, class) #checking the data type
+
+###### bar ghraph to show how may people leave vs stayed
+ggplot(data, aes(x = Attrition)) +
+  geom_bar(width = 0.5, fill = "steelblue") +
+  theme_minimal()
+
+###Gender vs Attrition
+ggplot(data, aes(Gender,fill = Attrition))+
+  geom_histogram(stat="count")+
+  geom_bar(width = 0.2)
+
+### MonthlyIncome vs. Age, by  color = Attrition
+ggplot(data, aes(MonthlyIncome, ï..Age, color = Attrition)) + 
+  geom_jitter() +
+  ggtitle("MonthlyIncome vs. Age, by  color = Attrition ") +
+  theme_light()
+###
+
+#######################
+
+# removing the colomns which doesn't make sense
+data$BusinessTravel <- NULL
+data$EducationField<- NULL
+data$Gender = NULL
+data$JobRole = NULL
+data$MaritalStatus = NULL
+data$TrainingTimesLastYear = NULL
+data$Over18 = NULL
+data$EmployeeCount = NULL
+
+str(data)
+
+#caTools package is used for proper splitting of data
+library(caTools)
+split=sample.split(data$Attrition,SplitRatio = 0.8) #Setting the split ratio as 80% and 20%
+training_set=subset(data,split==TRUE)
+test_Set=subset(data,split==FALSE)
+
+#applying the model
+
+model_glm <- glm(Attrition ~ ., data = training_set, family='binomial') 
+predicted_glm <- predict(model_glm, test_Set, type='response')
+predicted_glm <- ifelse(predicted_glm > 0.5,1,0)
+
+# confusion matrix 
+# Code stolen from https://www.kaggle.com/janiobachmann/attrition-in-an-organization-why-workers-quit
+
+conf_df=data.frame(table(test_Set$Attrition, predicted_glm))
+
+ggplot(data =  conf_df, mapping = aes(x = predicted_glm, y = Var1)) +
+  geom_tile(aes(fill = Freq), colour = "white") +
+  geom_text(aes(label = sprintf("%1.0f", Freq)), vjust = 1) +
+  scale_fill_gradient(low = "#F3F781", high = "#58FA82") +
+  theme_economist() + theme(legend.position="none", strip.background = element_blank(), strip.text.x = element_blank(), 
+                            plot.title=element_text(hjust=0.5, color="white"), plot.subtitle=element_text(color="white"), plot.background=element_rect(fill="#0D7680"),
+                            axis.text.x=element_text(colour="white"), axis.text.y=element_text(colour="white"),
+                            axis.title=element_text(colour="white"), 
+                            legend.background = element_rect(fill="#FFF9F5",
+                                                             size=0.5, linetype="solid", 
+                                                             colour ="black")) + 
+  labs(title="Confusion Matrix", y="Attrition Status", x="Predictions")
+  
+  
